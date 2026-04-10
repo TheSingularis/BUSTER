@@ -1,8 +1,8 @@
-# 🟢 BUSTER — Bot for Uptime, Status & Troublesome Event Reporting
+# BUSTER — Bot for Uptime, Status & Troublesome Event Reporting
 
 > A lightweight Discord bot that monitors self-hosted services and keeps your friends in the loop — without exposing what anyone's watching.
 
-Built to run on a Raspberry Pi and watch an Unraid server (or any homelab) from the outside.
+Built to watch an Unraid server (or any homelab) from the outside.
 
 ---
 
@@ -30,15 +30,14 @@ Built to run on a Raspberry Pi and watch an Unraid server (or any homelab) from 
 ## How It Works
 
 ```
-Raspberry Pi
-└── sentinel (systemd service)
-    ├── polls each service every 60s
-    ├── edits a pinned embed in #server-status
-    ├── DMs the owner on state transitions
-    └── responds to slash commands
+sentinel (systemd service)
+├── polls each service every 60s
+├── edits a pinned embed in #server-status
+├── DMs the owner on state transitions
+└── responds to slash commands
 ```
 
-The bot runs outside your Unraid server — on a Pi — so it can report on your server even if the server itself is the thing that went down.
+The bot runs outside your Unraid server so it can report on your server even if the server itself is the thing that went down.
 
 ---
 
@@ -56,10 +55,9 @@ The bot runs outside your Unraid server — on a Pi — so it can report on your
 
 ### Requirements
 
-- Raspberry Pi (any model with network access)
 - Python 3.11+
 - A Discord bot token ([guide](https://discord.com/developers/docs/getting-started))
-- Your services reachable from the Pi (local network or via domain/VPN)
+- Your services reachable from your host machine (local network or via domain/VPN)
 
 ### Installation
 
