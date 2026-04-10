@@ -3,6 +3,7 @@ aiohttp==3.13.5
 aiosignal==1.4.0
 attrs==26.1.0
 audioop-lts==0.2.2
+dataclasses==0.6
 discord.py==2.7.1
 dotenv==0.9.9
 frozenlist==1.8.0
