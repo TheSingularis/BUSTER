@@ -1,142 +1,146 @@
-# TODO
+# 🟢 BUSTER — Bot for Uptime, Status & Troublesome Event Reporting
 
-Roughly ordered — core first, polish later.
+> A lightweight Discord bot that monitors self-hosted services and keeps your friends in the loop — without exposing what anyone's watching.
 
----
+Built to run on a separate machine and monitor your homelab from the outside.
 
-## Name
-
-**BUSTER** — Bot for Uptime, Status & Troublesome Event Reporting
+> **⚠️ Status: Early development.** The project scaffold is in place and the bot connects to Discord. Service integrations, the status panel, alerts, and slash commands are not yet implemented.
 
 ---
 
-## Phase 1 — Core bot (get it running)
+## Planned Features
 
-- [ ] Scaffold project structure (`bot.py`, `config.py`, `cogs/`, `services/`)
-- [ ] Create Discord application and bot user, note token
-- [ ] Load Discord config from `.env` with validation (fail loudly on missing required keys)
-- [ ] Connect to Discord, verify bot comes online in guild
-- [ ] Register slash commands globally (or guild-scoped for faster dev iteration)
-
----
-
-## Phase 2 — Service plugin system
-
-- [ ] Write `BaseService` abstract class in `services/base.py`
-  - [ ] Fields: `type`, `name`, `url`, `api_key`
-  - [ ] Abstract method: `async def check() -> ServiceStatus`
-  - [ ] Helper: `async def get(path)` — wraps aiohttp, measures response time, handles timeouts
-- [ ] Write `ServiceStatus` dataclass: `{ up: bool, response_ms: int | None, detail: str | None }`
-- [ ] Write service registry in `base.py`: `register(cls)` + `REGISTRY: dict[str, type[BaseService]]`
-- [ ] Auto-import all `services/*.py` files at startup so each file self-registers
-- [ ] Write `services.yml` schema and loader in `config.py`
-  - [ ] Validate each entry has a `type` that exists in the registry
-  - [ ] Fail loudly with a clear message if a type is unknown
-- [ ] Implement `JellyfinService`
-  - [ ] Hit `/System/Info` for liveness
-  - [ ] Hit `/Sessions` for active stream count (no user/title data)
-  - [ ] Handle auth via `X-Emby-Token` header
-  - [ ] Self-register: `register(JellyfinService)` at bottom of file
-- [ ] Implement `AudiobookshelfService`
-  - [ ] Hit `/api/ping` for liveness
-  - [ ] Handle auth via `Authorization: Bearer` header
-  - [ ] Self-register at bottom of file
-- [ ] Test both checkers with a standalone script before wiring into the bot
-- [ ] Graceful timeout handling — treat no response within N seconds as down
+- **Persistent status panel** — a single pinned embed in `#server-status` that edits itself in place on every poll cycle, with interactive buttons for on-demand refresh and issue reporting
+- **Plugin-style service registry** — drop a new file into `services/` and add entries to `.env`; zero changes to core bot code
+- **Alert DMs** — when a service goes down or recovers, the bot DMs the owner directly (your phone gets the ping via Discord notifications)
+- **Cooldown logic** — flapping services don't spam you; alerts fire on state *transitions*, not every poll
+- **Friend-facing slash commands** — `/status`, `/ping <service>`, and `/report` let friends self-serve or flag issues
+- **Privacy-first** — active session *count* only; no titles, no usernames, nothing identifying
+- **No write access** — the bot is read-only; it cannot restart, modify, or control any service
 
 ---
 
-## Phase 3 — Persistent status panel
+## Planned Status Panel
 
-- [ ] On startup: search `#server-status` for an existing BUSTER pinned message (match by bot ID + embed title)
-- [ ] If not found: post a new embed and pin it; save message ID to `state.json`
-- [ ] If found: load message ID from `state.json` and resume editing it
-- [ ] Build embed renderer — given a list of `ServiceStatus` results, produce a `discord.Embed`:
-  - [ ] Title: `🟢 BUSTER — Service Status` (color reflects worst state across all services)
-  - [ ] One line per service: name, status indicator (✅ / ⚠️ / ❌), response time
-  - [ ] Footer: active stream count, overall uptime string, last-updated timestamp
-- [ ] Attach a persistent `discord.ui.View` with two buttons:
-  - [ ] `🔄 Refresh` — triggers immediate out-of-cycle poll, updates embed
-  - [ ] `🚨 Report Issue` — opens a modal for the user to type a message; DMs owner with context
-- [ ] Polling loop using `discord.ext.tasks` — runs every `POLL_INTERVAL_SECONDS`
-- [ ] Edit the pinned message in place on each poll (never delete + repost)
-- [ ] Handle embed edit rate limits gracefully (skip cycle if rejected, log it)
+```
+🟢 BUSTER — Service Status
+Last updated: 2 minutes ago
 
----
+Jellyfin          ✅  142ms
+Audiobookshelf    ✅   89ms
 
-## Phase 4 — Alerts
+Active streams: 2
+All services up for: 4d 12h
 
-- [ ] Track previous service state in memory (dict keyed by service name)
-- [ ] Alert fires only on state transition: up→down or down→up
-- [ ] On down: post in `#alerts` + DM owner with service name, timestamp, response detail
-- [ ] On recovery: follow-up in `#alerts` + DM owner with downtime duration
-- [ ] Cooldown: suppress repeat alerts for same service within `ALERT_COOLDOWN_SECONDS`
-- [ ] Test cooldown logic manually by toggling a service off/on quickly
+[ 🔄 Refresh ]  [ 🚨 Report Issue ]
+```
 
 ---
 
-## Phase 5 — Slash commands
+## Planned Services
 
-- [ ] `/status` — poll all services on demand, return ephemeral embed with current state
-- [ ] `/ping <service>` — check one named service right now, return result
-  - [ ] Autocomplete on `<service>` parameter from loaded service names
-  - [ ] Handle unknown service name gracefully
-- [ ] `/report` — accepts optional free-text; DMs owner with:
-  - [ ] Who reported (display name, not user ID)
-  - [ ] Their message
-  - [ ] Current service states at time of report
-  - [ ] Active stream count
+| Service        | What will be checked                                        |
+| -------------- | ----------------------------------------------------------- |
+| Jellyfin       | Health endpoint, response time, active stream count         |
+| Audiobookshelf | Health endpoint, response time                              |
+| *(extensible)* | Any HTTP service — add a file in `services/` and an env var |
 
 ---
 
-## Phase 6 — Deployment
+## Current Project Structure
 
-- [ ] Write `.env.example` with all keys documented and placeholder values
-- [ ] Write `services.yml.example` with Jellyfin + Audiobookshelf as templates
-- [ ] Write `requirements.txt` (pin major versions)
-- [ ] Write `homelab-buster.service` systemd unit
-  - [ ] `Restart=always`, `RestartSec=10`
-  - [ ] `User=` set to a non-root user
-  - [ ] `WorkingDirectory=` and `ExecStart=` point to venv Python
-- [ ] Test clean install on a fresh host from scratch (follow your own README)
-- [ ] Verify the bot survives a host reboot and reconnects cleanly
-- [ ] Verify the pinned panel is restored correctly after a restart (state.json roundtrip)
-- [ ] Verify alerts fire when the media server is unreachable from the bot host
-
----
-
-## Phase 7 — Polish (before going public)
-
-- [ ] Add logging to file with rotation (`logging.handlers.RotatingFileHandler`)
-- [ ] `config.py` validation errors give clear human-readable messages
-- [ ] Confirm adding a new service is genuinely a one-file + one-yml-entry job — test it
-- [ ] Confirm no secrets in git history (`git log --all --full-diff -p`)
-- [ ] Add `.gitignore` (`.env`, `__pycache__`, `*.pyc`, `state.json`)
-- [ ] Add GitHub Actions CI: lint with `ruff`, type check with `mypy`
-- [ ] Write a brief `CONTRIBUTING.md` if you want PRs
+```
+buster/
+├── bot.py                  # Entry point — connects to Discord, loads cogs (stubs)
+├── config.py               # Loads and validates required env vars from .env
+├── services/
+│   ├── base.py             # (stub) BaseService abstract class + registry
+│   ├── jellyfin.py         # (stub) Jellyfin service check
+│   └── audiobookshelf.py   # (stub) Audiobookshelf service check
+├── cogs/
+│   ├── status.py           # (stub) Persistent embed, polling loop, button handlers
+│   ├── alerts.py           # (stub) Down/recovery DM logic + cooldown
+│   └── commands.py         # (stub) Slash command definitions
+├── services.yml            # (empty) Service configuration — not yet loaded
+├── compose.yml             # Docker Compose — primary way to run the bot
+├── Dockerfile              # Python 3.11-slim image
+├── .env.example            # Copy to .env and fill in your values
+└── requirements.txt        # Pinned dependencies
+```
 
 ---
 
-## Backlog / future ideas
+## Setup
 
-**Web UI (config + status)**
-- [ ] Add FastAPI running in the same async process as the bot
-- [ ] `/` — read-only status page (same data as the Discord panel, no auth needed)
-- [ ] `/admin` — edit `services.yml` in the browser; LAN-only, no public exposure
-- [ ] `/reload` endpoint — hot-reload `services.yml` without restarting the bot
-- [ ] Keep web UI LAN-only; do not expose to the internet without auth
+### Requirements
 
-**Monitoring improvements**
-- [ ] Persistent state (SQLite) so downtime history survives bot restarts
-- [ ] `/history` command — last N up/down events per service
-- [ ] Configurable per-service poll intervals in `services.yml`
-- [ ] Generic HTTP check type (`type: http`, any URL + expected status code) — no code needed for simple services
-- [ ] Uptime percentage in the embed (7-day rolling)
+- Docker and Docker Compose
+- A Discord bot token ([Discord developer portal](https://discord.com/developers/applications))
+- Your services reachable from the host running the bot
 
-**Integrations**
-- [ ] Sonarr / Radarr / Prowlarr health checks
-- [ ] Unraid-specific: array status, disk usage (via Unraid API or community plugin)
-- [ ] Optional Ntfy / Pushover webhook as a secondary alert channel alongside Discord DMs
+### Configuration
 
-**Distribution**
-- [ ] Docker image + `compose.yml` for users who prefer containers over systemd
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+```env
+# Discord
+DISCORD_TOKEN=your_bot_token_here
+DISCORD_GUILD_ID=your_server_id
+STATUS_CHANNEL_ID=channel_id_for_the_pinned_embed
+ALERT_CHANNEL_ID=channel_id_for_alert_messages
+OWNER_DISCORD_ID=your_discord_user_id
+
+# Services
+JELLYFIN_URL=http://192.168.1.x:8096
+JELLYFIN_API_KEY=your_jellyfin_api_key
+
+AUDIOBOOKSHELF_URL=http://192.168.1.x:13378
+AUDIOBOOKSHELF_API_KEY=your_abs_api_key
+
+# Polling
+POLL_INTERVAL_SECONDS=60
+ALERT_COOLDOWN_SECONDS=300
+```
+
+### Running with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+To run in the background:
+
+```bash
+docker compose up --build -d
+```
+
+Check logs:
+
+```bash
+docker compose logs -f
+```
+
+Stop the bot:
+
+```bash
+docker compose down
+```
+
+---
+
+## Privacy
+
+- No usernames or media titles are ever stored or displayed
+- Active session counts are the only usage data shown
+- No data is sent anywhere except your own Discord server
+- The bot has no write access to any service
+
+---
+
+## License
+
+MIT
