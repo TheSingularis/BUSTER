@@ -18,48 +18,50 @@ Core first, polish later.
 - [x] Connect to Discord, verify bot comes online in server
 - [ ] Register slash commands globally (or server-scoped for faster dev iteration)
 
+### Bot configured
+
 ---
 
 ## Phase 2 - Service plugin system
 
-- [ ] Write `BaseService` abstract class in `services/base.py`
-  - [ ] Fields: `type`, `name`, `url`, `api_key`
-  - [ ] Abstract method: `async def check() -> ServiceStatus`
-  - [ ] Helper: `async def get(path)` - wraps aiohttp, measures response time, handles timeouts
-- [ ] Write `ServiceStatus` dataclass: `{ up: bool, response_ms: int | None, detail: str | None }`
-- [ ] Write service registry in `base.py`: `register(cls)` + `REGISTRY: dict[str, type[BaseService]]`
-- [ ] Auto-import all `services/*.py` files at startup so each file self-registers
-- [ ] Write `services.yml` schema and loader in `config.py`
-  - [ ] Validate each entry has a `type` that exists in the registry
-  - [ ] Fail loudly with a clear message if a type is unknown
-- [ ] Implement `JellyfinService`
-  - [ ] Hit `/System/Info` for liveness
+- [x] Write `BaseService` abstract class in `services/base.py`
+  - [x] Fields: `type`, `name`, `url`, `api_key`
+  - [x] Abstract method: `async def check() -> ServiceStatus`
+  - [x] Helper: `async def get(path)` - wraps aiohttp, measures response time, handles timeouts
+- [x] Write `ServiceStatus` dataclass: `{ up: bool, response_ms: int | None, detail: str | None }`
+- [x] Write service registry in `base.py`: `register(cls)` + `REGISTRY: dict[str, type[BaseService]]`
+- [x] Auto-import all `services/*.py` files at startup so each file self-registers
+- [x] Write `services.yml` schema and loader in `config.py`
+  - [x] Validate each entry has a `type` that exists in the registry
+  - [x] Fail loudly with a clear message if a type is unknown
+- [x] Implement `JellyfinService`
+  - [x] Hit `/health` for liveness
   - [ ] Hit `/Sessions` for active stream count (no user/title data)
-  - [ ] Handle auth via `X-Emby-Token` header
-  - [ ] Self-register: `register(JellyfinService)` at bottom of file
-- [ ] Implement `AudiobookshelfService`
-  - [ ] Hit `/api/ping` for liveness
-  - [ ] Handle auth via `Authorization: Bearer` header
-  - [ ] Self-register at bottom of file
-- [ ] Test both checkers with a standalone script before wiring into the bot
-- [ ] Graceful timeout handling - treat no response within N seconds as down
+  - [x] Self-register: `register(JellyfinService)` at bottom of file
+- [x] Implement `AudiobookshelfService`
+  - [x] Hit `/healthcheck` for liveness
+  - [x] Self-register at bottom of file
+- [x] Test both checkers with a standalone script before wiring into the bot
+- [x] Graceful timeout handling - treat no response within N seconds as down
+
+### Service Structure Built
 
 ---
 
 ## Phase 3 - Persistent status panel
 
-- [ ] On startup: search `#server-status` for an existing BUSTER pinned message (match by bot ID + embed title)
-- [ ] If not found: post a new embed and pin it; save message ID to `state.json`
-- [ ] If found: load message ID from `state.json` and resume editing it
-- [ ] Build embed renderer - given a list of `ServiceStatus` results, produce a `discord.Embed`:
-  - [ ] Title: `🟢 BUSTER - Service Status` (color reflects worst state across all services)
-  - [ ] One line per service: name, status indicator (✅ / ⚠️ / ❌), response time
+- [x] On startup: search `#server-status` for an existing BUSTER pinned message (match by post ID)
+- [x] If not found: post a new embed and pin it; save message ID to `state.json`
+- [x] If found: load message ID from `state.json` and resume editing it
+- [x] Build embed renderer - given a list of `ServiceStatus` results, produce a `discord.Embed`:
+  - [x] Title: `🟢 BUSTER - Service Status` (color reflects worst state across all services)
+  - [x] One line per service: name, status indicator (✅ / ⚠️ / ❌), response time
   - [ ] Footer: active stream count, overall uptime string, last-updated timestamp
 - [ ] Attach a persistent `discord.ui.View` with two buttons:
   - [ ] `🔄 Refresh` - triggers immediate out-of-cycle poll, updates embed
   - [ ] `🚨 Report Issue` - opens a modal for the user to type a message; DMs owner with context
-- [ ] Polling loop using `discord.ext.tasks` - runs every `POLL_INTERVAL_SECONDS`
-- [ ] Edit the pinned message in place on each poll (never delete + repost)
+- [x] Polling loop using `discord.ext.tasks` - runs every `POLL_INTERVAL_SECONDS`
+- [x] Edit the pinned message in place on each poll (never delete + repost)
 - [ ] Handle embed edit rate limits gracefully (skip cycle if rejected, log it)
 
 ---
