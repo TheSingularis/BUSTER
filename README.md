@@ -4,17 +4,20 @@
 
 Built to run on a separate machine and monitor your homelab from the outside.
 
-> **⚠️ Status: Early development.** The project scaffold is in place and the bot connects to Discord. Service integrations, the status panel, alerts, and slash commands are not yet implemented.
-
 ---
 
-## Planned Features
+## Features
 
+**Implemented**
+- Plugin-style service registry — drop a new file into `services/`, add an entry to `services.yml`, zero changes to core bot code
+- Jellyfin and Audiobookshelf health checks with response time tracking
+- Config validation — bot refuses to start with a clear error if required values are missing
+
+**Planned**
 - **Persistent status panel** — a single pinned embed in `#server-status` that edits itself in place on every poll cycle, with interactive buttons for on-demand refresh and issue reporting
-- **Plugin-style service registry** — drop a new file into `services/` and add entries to `.env`; zero changes to core bot code
-- **Alert DMs** — when a service goes down or recovers, the bot DMs the owner directly (your phone gets the ping via Discord notifications)
+- **Alert DMs** — when a service goes down or recovers, the bot DMs the owner directly
 - **Cooldown logic** — flapping services don't spam you; alerts fire on state *transitions*, not every poll
-- **Friend-facing slash commands** — `/status`, `/ping <service>`, and `/report` let friends self-serve or flag issues
+- **Friend-facing slash commands** — `/status`, `/ping <service>`, and `/report`
 - **Privacy-first** — active session *count* only; no titles, no usernames, nothing identifying
 - **No write access** — the bot is read-only; it cannot restart, modify, or control any service
 
@@ -37,35 +40,34 @@ All services up for: 4d 12h
 
 ---
 
-## Planned Services
+## Supported Services
 
-| Service        | What will be checked                                        |
-| -------------- | ----------------------------------------------------------- |
-| Jellyfin       | Health endpoint, response time, active stream count         |
-| Audiobookshelf | Health endpoint, response time                              |
-| *(extensible)* | Any HTTP service — add a file in `services/` and an env var |
+| Service        | What's checked                                                           |
+| -------------- | ------------------------------------------------------------------------ |
+| Jellyfin       | Health endpoint, response time, active stream count                      |
+| Audiobookshelf | Health endpoint, response time                                           |
+| *(extensible)* | Any HTTP service — add a file in `services/`, register in `services.yml` |
 
 ---
 
-## Current Project Structure
+## Project Structure
 
 ```
 buster/
-├── bot.py                  # Entry point — connects to Discord, loads cogs (stubs)
-├── config.py               # Loads and validates required env vars from .env
+├── bot.py                      # Entry point
+├── config.py                   # Loads .env and services.yml, validates both
 ├── services/
-│   ├── base.py             # (stub) BaseService abstract class + registry
-│   ├── jellyfin.py         # (stub) Jellyfin service check
-│   └── audiobookshelf.py   # (stub) Audiobookshelf service check
+│   ├── base.py                 # BaseService abstract class + registry
+│   ├── jellyfin.py             # Jellyfin health check
+│   └── audiobookshelf.py       # Audiobookshelf health check
 ├── cogs/
-│   ├── status.py           # (stub) Persistent embed, polling loop, button handlers
-│   ├── alerts.py           # (stub) Down/recovery DM logic + cooldown
-│   └── commands.py         # (stub) Slash command definitions
-├── services.yml            # (empty) Service configuration — not yet loaded
-├── compose.yml             # Docker Compose — primary way to run the bot
-├── Dockerfile              # Python 3.11-slim image
-├── .env.example            # Copy to .env and fill in your values
-└── requirements.txt        # Pinned dependencies
+│   ├── status.py               # (planned) Persistent embed, polling loop, button handlers
+│   ├── alerts.py               # (planned) Down/recovery DM logic + cooldown
+│   └── commands.py             # (planned) Slash command definitions
+├── services.yml                # Service configuration — edit this to add services
+├── .env.example
+├── requirements.txt
+└── homelab-buster.service      # systemd unit file
 ```
 
 ---
@@ -74,61 +76,105 @@ buster/
 
 ### Requirements
 
-- Docker and Docker Compose
-- A Discord bot token ([Discord developer portal](https://discord.com/developers/applications))
-- Your services reachable from the host running the bot
+- A Linux host to run the bot on (separate from your media server)
+- Python 3.11+
+- A Discord bot token ([Discord developer guide](https://discord.com/developers/docs/getting-started))
+- Your services reachable from the host (local network, domain, or VPN)
+
+### Installation
+
+```bash
+git clone https://github.com/yourusername/buster
+cd buster
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
 ### Configuration
 
-Copy `.env.example` to `.env` and fill in your values:
+Copy `.env.example` to `.env` and fill in your Discord credentials:
 
 ```bash
 cp .env.example .env
 ```
 
 ```env
-# Discord
 DISCORD_TOKEN=your_bot_token_here
 DISCORD_GUILD_ID=your_server_id
-STATUS_CHANNEL_ID=channel_id_for_the_pinned_embed
+STATUS_CHANNEL_ID=channel_id_for_the_pinned_panel
 ALERT_CHANNEL_ID=channel_id_for_alert_messages
 OWNER_DISCORD_ID=your_discord_user_id
-
-# Services
-JELLYFIN_URL=http://192.168.1.x:8096
-JELLYFIN_API_KEY=your_jellyfin_api_key
-
-AUDIOBOOKSHELF_URL=http://192.168.1.x:13378
-AUDIOBOOKSHELF_API_KEY=your_abs_api_key
-
-# Polling
 POLL_INTERVAL_SECONDS=60
 ALERT_COOLDOWN_SECONDS=300
 ```
 
-### Running with Docker Compose
+Then configure your services in `services.yml`:
 
-```bash
-docker compose up --build
+```yaml
+services:
+  - name: Jellyfin
+    type: jellyfin
+    url: http://192.168.1.x:8096
+    api_key: your_jellyfin_api_key
+
+  - name: Audiobookshelf
+    type: audiobookshelf
+    url: http://192.168.1.x:13378
+    api_key: your_abs_api_key
 ```
 
-To run in the background:
+### Running as a systemd service
+
+Copy the included unit file and enable it:
 
 ```bash
-docker compose up --build -d
+sudo cp homelab-buster.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now homelab-buster
 ```
 
-Check logs:
+Check status:
 
 ```bash
-docker compose logs -f
+sudo systemctl status homelab-buster
+journalctl -u homelab-buster -f
 ```
 
-Stop the bot:
+---
 
-```bash
-docker compose down
+## Adding a Service
+
+**Step 1** — create `services/myservice.py`:
+
+```python
+from services.base import BaseService, ServiceStatus, register
+
+class MyService(BaseService):
+    type = "myservice"
+    name = "My Service"
+
+    async def check(self) -> ServiceStatus:
+        status, response_ms = await self.get("/health")
+        return ServiceStatus(
+            up=status == 200,
+            response_ms=response_ms,
+            detail=None if status == 200 else f"Unexpected status code: {status}"
+        )
+
+register(MyService)
 ```
+
+**Step 2** — add an entry to `services.yml`:
+
+```yaml
+  - name: My Service
+    type: myservice
+    url: http://192.168.1.x:1234
+    api_key: optional
+```
+
+That's it. No changes to the bot core.
 
 ---
 
