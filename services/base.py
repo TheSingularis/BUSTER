@@ -23,16 +23,14 @@ class BaseService(ABC):
     async def check(self) -> ServiceStatus:
         ...
 
-    async def get(self, path: str) -> tuple[int, int]:
+    async def get(self, path: str, headers: dict | None = None) -> tuple[int, int]:
         if self.session is None or self.session.closed:
             self.session = aiohttp.ClientSession()
 
-        headers = {}
-        if self.api_key:
-            headers["X-Api-Key"] = self.api_key
+        headers = headers or {}
 
         start = time.monotonic()
-        async with self.session.get(f"{self.url}/{path}", headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+        async with self.session.get(f"{self.url}{path}", headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
             elapsed_ms = int((time.monotonic() - start) * 1000)
             return (response.status, elapsed_ms)
 
