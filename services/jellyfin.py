@@ -2,10 +2,9 @@ from services.base import BaseService, ServiceStatus, register
 
 class JellyfinService(BaseService):
     type = "jellyfin"
-    name = "Jellyfin"
 
     async def check(self) -> ServiceStatus:
-        status, response_ms = await self.get("/System/Info")
+        status, response_ms = await self.get("/health")
         return ServiceStatus(
             up=status == 200,
             response_ms=response_ms,
