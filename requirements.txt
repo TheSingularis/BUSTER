@@ -11,4 +11,5 @@ idna==3.11
 multidict==6.7.1
 propcache==0.4.1
 python-dotenv==1.2.2
+PyYAML==6.0.3
 yarl==1.23.0
