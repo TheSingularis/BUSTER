@@ -6,7 +6,11 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+class Buster(commands.Bot):
+    async def setup_hook(self):
+        await self.load_extension("cogs.status")
+
+bot = Buster(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
