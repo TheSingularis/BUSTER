@@ -2,10 +2,9 @@ from services.base import BaseService, ServiceStatus, register
 
 class AudioBookShelfService(BaseService):
     type = "audiobookshelf"
-    name = "AudioBookShelf"
 
     async def check(self) -> ServiceStatus:
-        status, response_ms = await self.get("/api/ping")
+        status, response_ms = await self.get("/healthcheck")
         return ServiceStatus(
             up=status == 200,
             response_ms=response_ms,
