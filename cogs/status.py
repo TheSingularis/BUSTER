@@ -15,7 +15,7 @@ class StatusCog(commands.Cog):
     async def cog_load(self):
         # Try to load state.json and fetch the existing message id
         try:
-            with open("state.json", "r") as f:
+            with open("state.json", "r", encoding="utf-8") as f:
                 state = json.load(f)
             self.status_message_id = state.get("status_message_id")
         except FileNotFoundError:
@@ -37,7 +37,7 @@ class StatusCog(commands.Cog):
             self.message = await self.create_status_message(embed)
         else:
             try:
-                self.message = await self.channel.fetch_message(self.status_message_id)
+                self.message = await self.channel.fetch_message(self.status_message_id) # type: ignore
                 await self.message.edit(embed=embed)
             except discord.NotFound:
                 self.message = await self.create_status_message(embed)
@@ -60,9 +60,9 @@ class StatusCog(commands.Cog):
         await self.bot.wait_until_ready()
 
     async def create_status_message(self, embed: discord.Embed) -> discord.Message:
-        message = await self.channel.send(embed=embed)
+        message = await self.channel.send(embed=embed) # type: ignore
         await message.pin()
-        with open("state.json", "w") as f:
+        with open("state.json", "w", encoding="utf-8") as f:
             json.dump({"status_message_id": message.id}, f)
         return message
 

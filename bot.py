@@ -14,7 +14,7 @@ bot = Buster(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f"BUSTER is online as {bot.user} (ID: {bot.user.id})")
+    print(f"BUSTER is online as {bot.user} (ID: {bot.user.id})") # type: ignore
     print(f"Connected to {len(bot.guilds)} guild(s)")
 
 if __name__ == "__main__":

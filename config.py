@@ -1,11 +1,11 @@
 import os
-from dotenv import load_dotenv
 
 import importlib
 import pkgutil
-import services
+import yaml # type: ignore
 
-import yaml
+from dotenv import load_dotenv
+import services
 
 from services.base import REGISTRY
 
@@ -38,11 +38,11 @@ def load_services():
     service_entries = []
 
     # Auto-import all modules in the services dir to trigger registration
-    for finder, name, ispkg in pkgutil.iter_modules(services.__path__):
+    for _, name, _ in pkgutil.iter_modules(services.__path__):
         importlib.import_module(f"services.{name}")
 
     # Read and parse the services configuration file
-    with open("services.yml", "r") as f:
+    with open("services.yml", "r", encoding="utf-8") as f:
         services_config = yaml.safe_load(f)["services"]
         for entry in services_config:
             if entry["type"] not in REGISTRY:
