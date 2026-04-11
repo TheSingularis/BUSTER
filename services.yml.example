@@ -1,0 +1,8 @@
+services:
+  - name: Jellyfin
+    type: jellyfin
+    url: http://192.168.1.x:8096
+
+  - name: Audiobookshelf
+    type: audiobookshelf
+    url: http://192.168.1.x:13378
