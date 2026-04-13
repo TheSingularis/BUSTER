@@ -22,6 +22,6 @@ class JellyfinService(BaseService):
         if status != 200:
             return f"Unexpected status code: {status}"
         stream_count = sum(1 for s in sessions if s.get("NowPlayingItem") and not s.get("PlayState", {}).get("IsPaused", False))
-        return f"{stream_count} stream(s) active" if stream_count > 0 else None
+        return f"{stream_count} stream{'s' if stream_count > 1 else ''} active" if stream_count > 0 else None
 
 register(JellyfinService)
