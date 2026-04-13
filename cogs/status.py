@@ -79,8 +79,13 @@ class StatusCog(commands.Cog):
         for service, status in pairs:
             indicator = "✅" if status.up else "❌"
             ms = f"{status.response_ms}ms" if status.response_ms is not None else "unreachable"
-            embed.add_field(name="\u200b", value=f"{indicator} \u200b [{service.name}]({service.url})", inline=True)
-            embed.add_field(name="\u200b", value="->", inline=True)
+
+            name_value = f"{indicator} \u200b [{service.name}]({service.url})"
+            if status.detail is not None and (status.up or config.SHOW_ERROR_DETAIL):
+                name_value += f"\n└─ {status.detail}"
+
+            embed.add_field(name="\u200b", value=name_value, inline=True)
+            embed.add_field(name="\u200b", value="→", inline=True)
             embed.add_field(name="\u200b", value=f"{ms}", inline=True)
         return embed
 

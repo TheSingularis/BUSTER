@@ -33,6 +33,9 @@ POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL_SECONDS", "60"))
 # Min time between repeat alerts (default: 300s)
 ALERT_COOLDOWN_SECONDS = int(os.getenv("ALERT_COOLDOWN_SECONDS", "300"))
 
+# Whether or not to show error details in Discord Embed
+SHOW_ERROR_DETAIL = bool(int(os.getenv("SHOW_ERROR_DETAIL", "0")))
+
 # Dynamically loads and instantiates all services defined in services.yml
 
 
