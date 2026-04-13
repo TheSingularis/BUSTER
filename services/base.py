@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from typing import Any
 
 import time
 import aiohttp
@@ -23,7 +24,7 @@ class BaseService(ABC):
     async def check(self) -> ServiceStatus:
         ...
 
-    async def get(self, path: str, headers: dict | None = None) -> tuple[int, int]:
+    async def get(self, path: str, headers: dict | None = None) -> tuple[int, int, Any]:
         if self.session is None or self.session.closed:
             self.session = aiohttp.ClientSession()
 
@@ -32,7 +33,11 @@ class BaseService(ABC):
         start = time.monotonic()
         async with self.session.get(f"{self.url}{path}", headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
             elapsed_ms = int((time.monotonic() - start) * 1000)
-            return (response.status, elapsed_ms)
+            try:
+                data = await response.json(content_type=None)
+            except (ValueError, aiohttp.ContentTypeError):
+                data = None
+            return (response.status, elapsed_ms, data)
 
 REGISTRY: dict[str, type[BaseService]] = {}
 

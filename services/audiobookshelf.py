@@ -4,7 +4,7 @@ class AudioBookShelfService(BaseService):
     type = "audiobookshelf"
 
     async def check(self) -> ServiceStatus:
-        status, response_ms = await self.get("/healthcheck")
+        status, response_ms, _ = await self.get("/healthcheck")
         return ServiceStatus(
             up=status == 200,
             response_ms=response_ms,
