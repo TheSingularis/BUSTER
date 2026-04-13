@@ -4,6 +4,7 @@ import asyncio
 from discord.ext import commands, tasks
 import discord
 import config
+from services.base import BaseService, ServiceStatus
 
 class StatusCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -66,7 +67,7 @@ class StatusCog(commands.Cog):
             json.dump({"status_message_id": message.id}, f)
         return message
 
-    def build_embed(self, pairs) -> discord.Embed:
+    def build_embed(self, pairs: list[tuple[BaseService, ServiceStatus]]) -> discord.Embed:
         all_up = all(status.up for _, status in pairs)
         color = discord.Color.green() if all_up else discord.Color.red()
         embed = discord.Embed(

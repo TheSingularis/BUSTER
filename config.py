@@ -2,12 +2,12 @@ import os
 
 import importlib
 import pkgutil
-import yaml # type: ignore
+import yaml  # type: ignore
 
 from dotenv import load_dotenv
 import services
 
-from services.base import REGISTRY
+from services.base import REGISTRY, BaseService
 
 # Load environment variables from .env file
 load_dotenv()
@@ -34,7 +34,9 @@ POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL_SECONDS", "60"))
 ALERT_COOLDOWN_SECONDS = int(os.getenv("ALERT_COOLDOWN_SECONDS", "300"))
 
 # Dynamically loads and instantiates all services defined in services.yml
-def load_services():
+
+
+def load_services() -> list[BaseService]:
     service_entries = []
 
     # Auto-import all modules in the services dir to trigger registration
